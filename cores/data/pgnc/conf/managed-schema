@@ -329,54 +329,62 @@
   <field name="_text_" type="text_general" multiValued="true" indexed="true" stored="false"/>
   <field name="_version_" type="plong" indexed="false" stored="false"/>
   <field name="alias_gene_name_sort" type="alphaNumericSort" multiValued="true" indexed="true" required="false" stored="false"/>
-  <field name="alias_gene_name_string" type="lowercase" omitNorms="true" multiValued="true" indexed="true" required="false" stored="true"/>
+  <field name="alias_gene_name" type="lowercase" omitNorms="true" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="alias_gene_name_suggest" type="text_suggest" omitNorms="true" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="alias_gene_name_tokenized_ngrams" type="text_ngrams" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="alias_gene_name_tokenized_stemmed" type="text_genename" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="alias_gene_symbol_ngrams" type="gene_symbol" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="alias_gene_symbol_sort" type="alphaNumericSort" multiValued="true" indexed="true" required="false" stored="false"/>
-  <field name="alias_gene_symbol_string" type="lowercase" multiValued="true" indexed="true" required="false" stored="true"/>
+  <field name="alias_gene_symbol" type="lowercase" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="alias_gene_symbol_suggest" type="text_suggest" omitNorms="true" multiValued="true" indexed="true" required="false" stored="true"/>
+  <field name="chromosome" type="lowercase" multiValued="false" indexed="true" required="false" stored="true"/>
+  <field name="ensembl_gene_id" type="lowercase" multiValued="true" uninvertible="true" indexed="true" stored="true"/>
+  <field name="gene_name" type="lowercase" omitNorms="true" multiValued="false" indexed="true" required="false" stored="true"/>
   <field name="gene_name_sort" type="alphaNumericSort" multiValued="false" indexed="true" required="false" stored="false"/>
-  <field name="gene_name_string" type="lowercase" omitNorms="true" multiValued="false" indexed="true" required="false" stored="true"/>
   <field name="gene_name_suggest" type="text_suggest" omitNorms="true" multiValued="false" indexed="true" required="false" stored="true"/>
   <field name="gene_name_tokenized_ngrams" type="text_ngrams" multiValued="false" indexed="true" required="false" stored="true"/>
   <field name="gene_name_tokenized_stemmed" type="text_genename" multiValued="false" indexed="true" required="false" stored="true"/>
+  <field name="gene_symbol" type="lowercase" multiValued="false" indexed="true" required="false" stored="true"/>
   <field name="gene_symbol_ngrams" type="gene_symbol" multiValued="false" indexed="true" required="false" stored="true"/>
   <field name="gene_symbol_sort" type="alphaNumericSort" multiValued="false" indexed="true" required="false" stored="false"/>
-  <field name="gene_symbol_string" type="lowercase" multiValued="false" indexed="true" required="false" stored="true"/>
   <field name="gene_symbol_suggest" type="text_suggest" omitNorms="true" multiValued="false" indexed="true" required="false" stored="true"/>
+  <field name="locus_type" type="lowercase" uninvertible="true" multiValued="true" indexed="true" stored="true"/>
+  <field name="primary_id" type="lowercase" uninvertible="true" indexed="true" stored="true"/>
+  <field name="ncbi_gene_id" type="pint" multiValued="true" uninvertible="true" indexed="true" stored="true"/>
   <field name="pgnc_id" type="nomenclature_id" multiValued="true" indexed="true" required="false" stored="true"/>
-  <field name="location_sortable" type="lowercase" multiValued="false" indexed="true" required="false" stored="true"/>
+  <field name="phytozome_id" type="lowercase" uninvertible="true" multiValued="true" indexed="true" stored="true"/>
   <field name="prev_gene_name_sort" type="alphaNumericSort" multiValued="true" indexed="true" required="false" stored="false"/>
-  <field name="prev_gene_name_string" type="lowercase" multiValued="true" indexed="true" required="false" stored="true"/>
+  <field name="prev_gene_name" type="lowercase" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="prev_gene_name_suggest" type="text_suggest" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="prev_gene_name_tokenized_ngrams" type="text_ngrams" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="prev_gene_name_tokenized_stemmed" type="text_genename" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="prev_gene_symbol_ngrams" type="gene_symbol" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="prev_gene_symbol_sort" type="alphaNumericSort" multiValued="true" indexed="true" required="false" stored="false"/>
-  <field name="prev_gene_symbol_string" type="lowercase" multiValued="true" indexed="true" required="false" stored="true"/>
+  <field name="prev_gene_symbol" type="lowercase" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="prev_gene_symbol_suggest" type="text_suggest" omitNorms="true" multiValued="true" indexed="true" required="false" stored="true"/>
+  <field name="pubmed_id" type="pint" multiValued="true" uninvertible="true" indexed="true" stored="true"/>
   <field name="status" type="lowercase" multiValued="false" indexed="true" required="false" stored="true"/>
+  <field name="taxon_id" type="pint" uninvertible="true" indexed="true" stored="true"/>
+  <field name="uniprot_id" type="lowercase" uninvertible="true" multiValued="true" indexed="true" stored="true"/>
   <field name="uuid" type="uuid" multiValued="false" indexed="true" required="true" stored="true"/>
-  <copyField source="alias_gene_name_string" dest="alias_gene_name_sort"/>
-  <copyField source="alias_gene_name_string" dest="alias_gene_name_suggest"/>
-  <copyField source="alias_gene_name_string" dest="alias_gene_name_tokenized_ngrams"/>
-  <copyField source="alias_gene_name_string" dest="alias_gene_name_tokenized_stemmed"/>
-  <copyField source="alias_gene_symbol_string" dest="alias_gene_symbol_ngrams"/>
-  <copyField source="alias_gene_symbol_string" dest="alias_gene_symbol_sort"/>
-  <copyField source="alias_gene_symbol_string" dest="alias_gene_symbol_suggest"/>
-  <copyField source="gene_name_string" dest="gene_name_sort"/>
-  <copyField source="gene_name_string" dest="gene_name_tokenized_ngrams"/>
-  <copyField source="gene_name_string" dest="gene_name_tokenized_stemmed"/>
-  <copyField source="gene_symbol_string" dest="gene_symbol_ngrams"/>
-  <copyField source="gene_symbol_string" dest="gene_symbol_sort"/>
-  <copyField source="gene_symbol_string" dest="gene_symbol_suggest"/>
-  <copyField source="prev_gene_name_string" dest="prev_gene_name_sort"/>
-  <copyField source="prev_gene_name_string" dest="prev_gene_name_suggest"/>
-  <copyField source="prev_gene_name_string" dest="prev_gene_name_tokenized_ngrams"/>
-  <copyField source="prev_gene_name_string" dest="prev_gene_name_tokenized_stemmed"/>
-  <copyField source="prev_gene_symbol_string" dest="prev_gene_symbol_ngrams"/>
-  <copyField source="prev_gene_symbol_string" dest="prev_gene_symbol_sort"/>
-  <copyField source="prev_gene_symbol_string" dest="prev_gene_symbol_suggest"/>
+  <copyField source="alias_gene_name" dest="alias_gene_name_sort"/>
+  <copyField source="alias_gene_name" dest="alias_gene_name_suggest"/>
+  <copyField source="alias_gene_name" dest="alias_gene_name_tokenized_ngrams"/>
+  <copyField source="alias_gene_name" dest="alias_gene_name_tokenized_stemmed"/>
+  <copyField source="alias_gene_symbol" dest="alias_gene_symbol_ngrams"/>
+  <copyField source="alias_gene_symbol" dest="alias_gene_symbol_sort"/>
+  <copyField source="alias_gene_symbol" dest="alias_gene_symbol_suggest"/>
+  <copyField source="gene_name" dest="gene_name_sort"/>
+  <copyField source="gene_name" dest="gene_name_tokenized_ngrams"/>
+  <copyField source="gene_name" dest="gene_name_tokenized_stemmed"/>
+  <copyField source="gene_symbol" dest="gene_symbol_ngrams"/>
+  <copyField source="gene_symbol" dest="gene_symbol_sort"/>
+  <copyField source="gene_symbol" dest="gene_symbol_suggest"/>
+  <copyField source="prev_gene_name" dest="prev_gene_name_sort"/>
+  <copyField source="prev_gene_name" dest="prev_gene_name_suggest"/>
+  <copyField source="prev_gene_name" dest="prev_gene_name_tokenized_ngrams"/>
+  <copyField source="prev_gene_name" dest="prev_gene_name_tokenized_stemmed"/>
+  <copyField source="prev_gene_symbol" dest="prev_gene_symbol_ngrams"/>
+  <copyField source="prev_gene_symbol" dest="prev_gene_symbol_sort"/>
+  <copyField source="prev_gene_symbol" dest="prev_gene_symbol_suggest"/>
 </schema>
