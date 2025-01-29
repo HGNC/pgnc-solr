@@ -796,15 +796,15 @@
        <str name="qf">
             alias_gene_name_tokenized_stemmed^5.0
             alias_gene_name_tokenized_ngrams^2.0
-            alias_gene_name^10.0
-            alias_gene_symbol^40.0
+            alias_gene_name_string^10.0
+            alias_gene_symbol_string^40.0
             alias_gene_symbol_ngrams^35.0
             chromosome^1.0
             ensembl_gene_id^1.0
             gene_name_tokenized_stemmed^30.0
             gene_name_tokenized_ngrams^15.0
-            gene_name^35.0
-            gene_symbol^150.0
+            gene_name_string^35.0
+            gene_symbol_string^150.0
             gene_symbol_ngrams^145.0
             locus_type^1.0
             ncbi_gene_id^1.0
@@ -812,42 +812,42 @@
             phytozome_id^1.0
             prev_gene_name_tokenized_stemmed^5.0
             prev_gene_name_tokenized_ngrams^2.0
-            prev_gene_name^10.0
-            prev_gene_symbol^45.0
+            prev_gene_name_string^10.0
+            prev_gene_symbol_string^45.0
             prev_gene_symbol_ngrams^40.0
             status^1.0
             uniprot_id^1.0
        </str>
        <str name="f.gene_symbol.qf">
-           gene_symbol^150.0
+           gene_symbol_string^150.0
            gene_symbol_ngrams^145.0
        </str>
        <str name="f.alias_gene_symbol.qf">
-           alias_gene_symbol^40.0
+           alias_gene_symbol_string^40.0
            alias_gene_symbol_ngrams^35.0
        </str>
        <str name="f.prev_gene_symbol.qf">
-           prev_gene_symbol^45.0
+           prev_gene_symbol_string^45.0
            prev_gene_symbol_ngrams^40.0
        </str>
        
        <str name="f.alias_gene_name.qf">
-           alias_gene_name^10.0
+           alias_gene_name_string^10.0
            alias_gene_name_tokenized_stemmed^5.0
            alias_gene_name_tokenized_ngrams^2.0
        </str>
        <str name="f.alias_group_name.qf">
-           alias_group_name^10.0
+           alias_group_name_string^10.0
            alias_group_name_tokenized_stemmed^5.0
            alias_group_name_tokenized_ngrams^2.0
        </str>
        <str name="f.gene_name.qf">
-           gene_name^35.0
+           gene_name_string^35.0
            gene_name_tokenized_stemmed^30.0
            gene_name_tokenized_ngrams^15.0
        </str>
        <str name="f.prev_gene_name.qf">
-           prev_gene_name^10.0
+           prev_gene_name_string^10.0
            prev_gene_name_tokenized_stemmed^5.0
            prev_gene_name_tokenized_ngrams^2.0
        </str>
@@ -855,15 +855,15 @@
        <str name="pf">
             alias_gene_name_tokenized_stemmed^5.0
             alias_gene_name_tokenized_ngrams^2.0
-            alias_gene_name^10.0
-            alias_gene_symbol^40.0
+            alias_gene_name_string^10.0
+            alias_gene_symbol_string^40.0
             alias_gene_symbol_ngrams^35.0
             chromosome^1.0
             ensembl_gene_id^1.0
             gene_name_tokenized_stemmed^30.0
             gene_name_tokenized_ngrams^15.0
-            gene_name^35.0
-            gene_symbol^150.0
+            gene_name_string^35.0
+            gene_symbol_string^150.0
             gene_symbol_ngrams^145.0
             locus_type^1.0
             ncbi_gene_id^1.0
@@ -871,8 +871,8 @@
             phytozome_id^1.0
             prev_gene_name_tokenized_stemmed^5.0
             prev_gene_name_tokenized_ngrams^2.0
-            prev_gene_name^10.0
-            prev_gene_symbol^45.0
+            prev_gene_name_string^10.0
+            prev_gene_symbol_string^45.0
             prev_gene_symbol_ngrams^40.0
             status^1.0
             uniprot_id^1.0
@@ -881,18 +881,18 @@
        <str name="q.alt">*:*</str>
        <str name="rows">10</str>
        <str name="fl">
-            alias_gene_name
-            alias_gene_symbol
+            alias_gene_name_string
+            alias_gene_symbol_string
             chromosome
             ensembl_gene_id
-            gene_name
-            gene_symbol
+            gene_name_string
+            gene_symbol_string
             locus_type
             ncbi_gene_id
             pgnc_id
             phytozome_id
-            prev_gene_name
-            prev_gene_symbol
+            prev_gene_name_string
+            prev_gene_symbol_string
             status
             uniprot_id
             uuid
@@ -1103,7 +1103,7 @@
       <str name="dictionaryImpl">DocumentDictionaryFactory</str>
       <str name="payloadField">pgnc_id</str>
       <str name="field">gene_symbol_suggest</str>
-      <str name="suggestAnalyzerFieldType">gene_symbol</str>
+      <str name="suggestAnalyzerFieldType">gene_symbol_string</str>
       <str name="buildOnStartup">true</str>
       <str name="buildOnCommit">true</str>
       <str name="highlight">false</str>
@@ -1127,7 +1127,7 @@
       <str name="dictionaryImpl">DocumentDictionaryFactory</str>
       <str name="payloadField">pgnc_id</str>
       <str name="field">alias_symbol_suggest</str>
-      <str name="suggestAnalyzerFieldType">gene_symbol</str>
+      <str name="suggestAnalyzerFieldType">gene_symbol_string</str>
       <str name="buildOnStartup">true</str>
       <str name="buildOnCommit">true</str>
       <str name="highlight">false</str>
@@ -1151,7 +1151,7 @@
       <str name="dictionaryImpl">DocumentDictionaryFactory</str>
       <str name="payloadField">pgnc_id</str>
       <str name="field">prev_symbol_suggest</str>
-      <str name="suggestAnalyzerFieldType">gene_symbol</str>
+      <str name="suggestAnalyzerFieldType">gene_symbol_string</str>
       <str name="buildOnStartup">true</str>
       <str name="buildOnCommit">true</str>
       <str name="highlight">false</str>
