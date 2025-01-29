@@ -362,7 +362,7 @@
   <field name="prev_gene_symbol_sort" type="alphaNumericSort" multiValued="true" indexed="true" required="false" stored="false"/>
   <field name="prev_gene_symbol" type="lowercase" multiValued="true" indexed="true" required="false" stored="true"/>
   <field name="prev_gene_symbol_suggest" type="text_suggest" omitNorms="true" multiValued="true" indexed="true" required="false" stored="true"/>
-  <field name="pubmed_id" type="pint" multiValued="true" uninvertible="true" indexed="false" stored="false"/>
+  <!-- <field name="pubmed_id" type="pint" multiValued="true" uninvertible="true" indexed="false" stored="false"/> -->
   <field name="status" type="lowercase" multiValued="false" indexed="true" required="false" stored="true"/>
   <field name="taxon_id" type="pint" uninvertible="true" indexed="true" stored="true"/>
   <field name="uniprot_id" type="lowercase" uninvertible="true" multiValued="true" indexed="true" stored="true"/>
