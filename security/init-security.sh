@@ -7,18 +7,41 @@ until curl -s "http://localhost:${SOLR_PORT}/solr/admin/ping" > /dev/null; do
   sleep 2
 done
 
-# Check if security is already configured
-if curl -s -f "http://localhost:${SOLR_PORT}/solr/admin/authentication" > /dev/null 2>&1; then
-  echo "Security already configured, skipping initialization"
-  exit 0
-fi
+echo "Solr is ready. Setting up BasicAuth authentication with user: ${SOLR_USERNAME}"
 
-# Copy security.json to the correct location
-if [ ! -f /var/solr/data/security.json ]; then
-  echo "Copying security configuration..."
-  cp /var/solr/security/security.json /var/solr/data/security.json
-  chown solr:solr /var/solr/data/security.json
-  chmod 600 /var/solr/data/security.json
-fi
+# Set up both authentication and authorization in one call to avoid sequencing issues
+echo "Configuring authentication and authorization..."
+curl -X POST "http://localhost:${SOLR_PORT}/solr/admin/authentication" \
+  -H 'Content-Type: application/json' \
+  -d "{
+    \"set-property\": {
+      \"blockUnknown\": true,
+      \"class\": \"solr.BasicAuthPlugin\"
+    },
+    \"set-user\": {\"${SOLR_USERNAME}\": \"${SOLR_PASSWORD}\"}
+  }"
 
-echo "Security configuration applied."
+sleep 3
+
+# Now set up authorization in a separate call
+curl -X POST "http://localhost:${SOLR_PORT}/solr/admin/authorization" \
+  -u "${SOLR_USERNAME}:${SOLR_PASSWORD}" \
+  -H 'Content-Type: application/json' \
+  -d "{
+    \"set-property\": {
+      \"class\": \"solr.RuleBasedAuthorizationPlugin\"
+    },
+    \"set-permission\": {\"name\": \"all\", \"role\": \"admin\"},
+    \"set-user-role\": {\"${SOLR_USERNAME}\": \"admin\"}
+  }"
+
+echo "Security configuration completed successfully!"
+echo "Authentication enabled for user: ${SOLR_USERNAME}"
+
+# Test that authentication is working
+echo "Testing authentication..."
+if curl -f -u "${SOLR_USERNAME}:${SOLR_PASSWORD}" -s "http://localhost:${SOLR_PORT}/solr/admin/authentication" > /dev/null; then
+  echo "Authentication test passed!"
+else
+  echo "Authentication test failed!"
+fi
