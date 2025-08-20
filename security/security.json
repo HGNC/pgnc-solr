@@ -1,0 +1,53 @@
+{
+    "authentication": {
+        "blockUnknown": true,
+        "class": "solr.BasicAuthPlugin",
+        "credentials": {
+            "admin": "lQDY0KsRa6wfBbX/x0Jec77FoBniLbzXE3vjfTY5oj4= IrLbPtrICbLsVy2J6aDKvyRHuicNedlX//YoYrcbMBs="
+        }
+    },
+    "authorization": {
+        "class": "solr.RuleBasedAuthorizationPlugin",
+        "permissions": [
+            {
+                "name": "security-edit",
+                "role": "admin"
+            },
+            {
+                "name": "security-read",
+                "role": "admin"
+            },
+            {
+                "name": "collection-admin-edit",
+                "role": "admin"
+            },
+            {
+                "name": "collection-admin-read",
+                "role": "admin"
+            },
+            {
+                "name": "core-admin-edit",
+                "role": "admin"
+            },
+            {
+                "name": "core-admin-read",
+                "role": "admin"
+            },
+            {
+                "name": "read",
+                "role": "admin"
+            },
+            {
+                "name": "update",
+                "role": "admin"
+            },
+            {
+                "name": "all",
+                "role": "admin"
+            }
+        ],
+        "user-role": {
+            "admin": "admin"
+        }
+    }
+}
