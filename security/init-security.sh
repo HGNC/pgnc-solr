@@ -1,47 +1,35 @@
 #!/bin/bash
 set -e
 
-# Wait for Solr to start
-echo "Waiting for Solr to be ready..."
-until curl -s "http://localhost:${SOLR_PORT}/solr/admin/ping" > /dev/null; do
-  sleep 2
-done
-
-echo "Solr is ready. Setting up BasicAuth authentication with user: ${SOLR_USERNAME}"
-
-# Set up both authentication and authorization in one call to avoid sequencing issues
-echo "Configuring authentication and authorization..."
-curl -X POST "http://localhost:${SOLR_PORT}/solr/admin/authentication" \
-  -H 'Content-Type: application/json' \
-  -d "{
-    \"set-property\": {
-      \"blockUnknown\": true,
-      \"class\": \"solr.BasicAuthPlugin\"
-    },
-    \"set-user\": {\"${SOLR_USERNAME}\": \"${SOLR_PASSWORD}\"}
-  }"
-
-sleep 3
-
-# Now set up authorization in a separate call
-curl -X POST "http://localhost:${SOLR_PORT}/solr/admin/authorization" \
-  -u "${SOLR_USERNAME}:${SOLR_PASSWORD}" \
-  -H 'Content-Type: application/json' \
-  -d "{
-    \"set-property\": {
-      \"class\": \"solr.RuleBasedAuthorizationPlugin\"
-    },
-    \"set-permission\": {\"name\": \"all\", \"role\": \"admin\"},
-    \"set-user-role\": {\"${SOLR_USERNAME}\": \"admin\"}
-  }"
-
-echo "Security configuration completed successfully!"
-echo "Authentication enabled for user: ${SOLR_USERNAME}"
-
-# Test that authentication is working
-echo "Testing authentication..."
-if curl -f -u "${SOLR_USERNAME}:${SOLR_PASSWORD}" -s "http://localhost:${SOLR_PORT}/solr/admin/authentication" > /dev/null; then
-  echo "Authentication test passed!"
-else
-  echo "Authentication test failed!"
+# Exit if username or password is not set
+if [ -z "$SOLR_ADMIN_USER" ] || [ -z "$SOLR_ADMIN_PASSWORD" ]; then
+  echo "SOLR_ADMIN_USER and SOLR_ADMIN_PASSWORD must be set. Skipping security setup."
+  exit 0
 fi
+
+# Check if security is already enabled
+if curl -s --user "${SOLR_ADMIN_USER}:${SOLR_ADMIN_PASSWORD}" "http://localhost:8983/solr/admin/authentication" | grep -q '"class":"solr.BasicAuthPlugin"'; then
+  echo "Basic Authentication is already enabled."
+  exit 0
+fi
+
+echo "Enabling Basic Authentication for Solr..."
+
+# Solr requires a SHA-256 hash of the password.
+PASSWORD_HASH=$(echo -n "${SOLR_ADMIN_PASSWORD}" | sha256sum | awk '{print $1}')
+
+# Create the credentials JSON object, escaping quotes for sed.
+CREDENTIALS="{\\\"${SOLR_ADMIN_USER}\\\":\\\"${PASSWORD_HASH}\\\"}"
+
+# Create a temporary security.json from the template, replacing the placeholder.
+TEMP_SECURITY_JSON=$(mktemp)
+sed "s/\"REPLACE_WITH_CREDS\"/${CREDENTIALS}/" "/var/solr/security/security.json" > "${TEMP_SECURITY_JSON}"
+
+# Post the new security configuration to Solr.
+echo "Applying security configuration..."
+curl -X POST -H 'Content-type:application/json' --data-binary "@${TEMP_SECURITY_JSON}" "http://localhost:8983/solr/admin/authentication"
+
+# Clean up the temporary file.
+rm "${TEMP_SECURITY_JSON}"
+
+echo "Basic Authentication has been enabled for user: ${SOLR_ADMIN_USER}"

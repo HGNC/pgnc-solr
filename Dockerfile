@@ -1,13 +1,13 @@
 FROM solr:8
-MAINTAINER Kristian Gray <kag56@cam.ac.uk>
+LABEL maintainer="Kristian Gray <kag56@cam.ac.uk>"
 
-# Copy cores as before
-COPY --chown=solr:root cores /var/solr
+USER solr
 
-# Copy security configuration
 COPY --chown=solr:solr security/ /var/solr/security/
-RUN chmod +x /var/solr/security/init-security.sh
-RUN chmod +x /var/solr/security/docker-entrypoint.sh
+COPY --chown=solr:root cores /var/solr
+RUN chmod +x /var/solr/security/docker-entrypoint.sh /var/solr/security/init-security.sh
+
+USER solr
 
 ENTRYPOINT ["/var/solr/security/docker-entrypoint.sh"]
-CMD ["solr-foreground"]
+CMD ["solr-fg"]
