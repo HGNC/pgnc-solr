@@ -18,17 +18,18 @@ echo "Enabling Basic Authentication for Solr..."
 # Solr requires a SHA-256 hash of the password.
 PASSWORD_HASH=$(echo -n "${SOLR_ADMIN_PASSWORD}" | sha256sum | awk '{print $1}')
 
-# Create the credentials JSON object.
+# Create the JSON objects for credentials and user-role mapping.
 CREDENTIALS_JSON="{\"$SOLR_ADMIN_USER\":\"$PASSWORD_HASH\"}"
+USER_ROLE_JSON="{\"$SOLR_ADMIN_USER\":\"admin\"}"
 
-# Create a temporary security.json from the template, replacing the placeholder.
-# The placeholder is a simple string, so we can use sed to replace it with the JSON object.
+# Create a temporary security.json from the template, replacing the placeholders.
 TEMP_SECURITY_JSON=$(mktemp)
-sed "s/\"REPLACE_WITH_CREDS\"/${CREDENTIALS_JSON}/" "/var/solr/security/security.json" > "${TEMP_SECURITY_JSON}"
+sed "s/\"REPLACE_WITH_CREDS\"/${CREDENTIALS_JSON}/" "/var/solr/security/security.json" | \
+sed "s/\"REPLACE_WITH_USER_ROLE\"/${USER_ROLE_JSON}/" > "${TEMP_SECURITY_JSON}"
+
 
 # Post the new security configuration to Solr.
 echo "Applying security configuration..."
-# We add --fail to curl to make it exit with an error if the HTTP request fails (e.g., 400 error)
 RESPONSE_CODE=$(curl -o /dev/null -s -w "%{http_code}" -X POST -H 'Content-type:application/json' --data-binary "@${TEMP_SECURITY_JSON}" "http://localhost:8983/solr/admin/authentication")
 
 # Clean up the temporary file.
@@ -38,6 +39,8 @@ if [ "$RESPONSE_CODE" -eq 200 ]; then
   echo "Basic Authentication has been enabled for user: ${SOLR_ADMIN_USER}"
 else
   echo "Error: Failed to apply security configuration. Solr responded with HTTP code: $RESPONSE_CODE"
-  echo "Please check the Solr logs for more details."
+  # Print the content of the JSON we tried to send, for debugging.
+  echo "Attempted to send the following configuration:"
+  cat "${TEMP_SECURITY_JSON}"
   exit 1
 fi
