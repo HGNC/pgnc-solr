@@ -11,8 +11,6 @@
                 "role": "admin"
             }
         ],
-        "user-role": {
-            "admin": "admin"
-        }
+        "user-role": "REPLACE_WITH_USER_ROLE"
     }
 }
