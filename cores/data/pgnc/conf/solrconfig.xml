@@ -83,8 +83,8 @@
   -->
   <lib dir="${solr.install.dir:../../../..}/contrib/velocity/lib" regex=".*\.jar" />
   <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-velocity-\d.*\.jar" />
-  <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-dataimporthandler-\d+\.\d+\.\d+\.jar" />
-  <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-dataimporthandler-extras-\d+\.\d+\.\d+\.jar" />
+  <!-- <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-dataimporthandler-\d+\.\d+\.\d+\.jar" /> -->
+  <!-- <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-dataimporthandler-extras-\d+\.\d+\.\d+\.jar" /> -->
 
   <!-- Data Directory
 
@@ -250,25 +250,6 @@
       -->
     <!-- <infoStream file="INFOSTREAM.txt">false</infoStream> -->
   </indexConfig>
-
-
-  <!-- JMX
-
-       This example enables JMX if and only if an existing MBeanServer
-       is found, use this if you want to configure JMX through JVM
-       parameters. Remove this to disable exposing Solr configuration
-       and statistics to JMX.
-
-       For more details see http://wiki.apache.org/solr/SolrJmx
-    -->
-  <jmx />
-  <!-- If you want to connect to a particular server, specify the
-       agentId
-    -->
-  <!-- <jmx agentId="myAgent" /> -->
-  <!-- If you want to start a new MBeanServer, specify the serviceUrl -->
-  <!-- <jmx serviceUrl="service:jmx:rmi:///jndi/rmi://localhost:9999/solr"/>
-    -->
 
   <!-- The default high-performance update handler -->
   <updateHandler class="solr.DirectUpdateHandler2">
@@ -589,39 +570,6 @@
 
     -->
   <requestDispatcher>
-    <!-- Request Parsing
-
-         These settings indicate how Solr Requests may be parsed, and
-         what restrictions may be placed on the ContentStreams from
-         those requests
-
-         enableRemoteStreaming - enables use of the stream.file
-         and stream.url parameters for specifying remote streams.
-
-         multipartUploadLimitInKB - specifies the max size (in KiB) of
-         Multipart File Uploads that Solr will allow in a Request.
-
-         formdataUploadLimitInKB - specifies the max size (in KiB) of
-         form data (application/x-www-form-urlencoded) sent via
-         POST. You can use POST to pass request parameters not
-         fitting into the URL.
-
-         addHttpRequestToContext - if set to true, it will instruct
-         the requestParsers to include the original HttpServletRequest
-         object in the context map of the SolrQueryRequest under the
-         key "httpRequest". It will not be used by any of the existing
-         Solr components, but may be useful when developing custom
-         plugins.
-
-         *** WARNING ***
-         Before enabling remote streaming, you should make sure your
-         system has authentication enabled.
-
-    <requestParsers enableRemoteStreaming="false"
-                    multipartUploadLimitInKB="-1"
-                    formdataUploadLimitInKB="-1"
-                    addHttpRequestToContext="false"/>
-      -->
 
     <!-- HTTP Caching
 
@@ -932,11 +880,11 @@
      </arr>
   </requestHandler>
 
-  <requestHandler name="/dataimport" class="org.apache.solr.handler.dataimport.DataImportHandler">
+  <!-- <requestHandler name="/dataimport" class="org.apache.solr.handler.dataimport.DataImportHandler">
     <lst name="defaults">
       <str name="config">/var/solr/data/pgnc/conf/data-config.xml</str>
     </lst>
-  </requestHandler>
+  </requestHandler> -->
 
   <initParams path="/update/**,/query,/select,/spell">
     <lst name="defaults">
