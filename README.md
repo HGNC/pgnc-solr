@@ -1,6 +1,6 @@
 # PGNC Solr Search Engine
 
-[![Apache Solr](https://img.shields.io/badge/Apache%20Solr-8.x-orange.svg)](https://solr.apache.org/)
+[![Apache Solr](https://img.shields.io/badge/Apache%20Solr-9.9.0-orange.svg)](https://solr.apache.org/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 ## Overview
@@ -9,15 +9,15 @@ This repository contains the Apache Solr search configuration for the PGNC (Plan
 
 ## Current Configuration
 
-- **Solr Version**: 8.x (Docker: `solr:8`)
-- **Lucene Version**: 8.5.2
+- **Solr Version**: 9.9.0 (Docker: `solr:9.9.0`)
+- **Lucene Match Version**: Aligned with Solr 9.x
 - **Core Name**: `pgnc`
 - **Security**: BasicAuth enabled with admin/client user roles
-- **Cache Implementation**: LRUCache and FastLRUCache (Solr 8.x compatible)
+- **Cache Implementation**: CaffeineCache (Solr 9.x)
 
 ## Architecture
 
-```
+```text
 solr/
 ├── cores/                    # Solr cores configuration
 │   ├── data/                # Core data and configuration
@@ -32,7 +32,7 @@ solr/
 │   │   ├── security.json   # Authentication configuration
 │   │   └── solr.xml       # Solr instance configuration
 │   └── logs/               # Solr application logs
-├── Dockerfile              # Container configuration (FROM solr:8)
+├── Dockerfile              # Container configuration (FROM solr:9.9.0)
 └── web.xml                 # Web application configuration
 ```
 
@@ -48,7 +48,7 @@ solr/
 
 ### Performance Optimizations
 
-- **LRU caching** optimized for Solr 8.x
+- **Caffeine cache** optimized for Solr 9.x
 - **Optimized field types** for different data types (text, string, location)
 - **Efficient indexing** with proper field analysis and tokenization
 - **Request handler optimization** for common query patterns
@@ -66,7 +66,7 @@ solr/
 
 - Docker or Podman with Compose support
 - Environment file (`.env`) with Solr credentials
-- Java 8+ (handled automatically in Docker container)
+- Java 11+ (handled automatically in Docker container)
 
 ### Quick Start
 
@@ -116,8 +116,8 @@ Defines the document structure and field types for gene data:
 
 Core configuration including:
 
-- **Cache settings**: LRUCache and FastLRUCache for Solr 8.x compatibility
-- **Lucene version**: 8.5.2 match version
+- **Cache settings**: CaffeineCache for Solr 9.x
+- **Lucene version**: Match version aligned with Solr 9.x
 - **Request handlers**: Search, suggest, and data import handlers
 - **Update processors**: Data transformation and validation
 - **Security settings**: Authentication and authorization
@@ -250,14 +250,14 @@ Current performance characteristics:
 - **Memory usage**: ~2GB RAM for full dataset
 - **Concurrent users**: Tested for 100+ simultaneous searches
 
-## Upgrade Path
+## Solr 9.x Notes
 
-This project currently uses Solr 8.x. For future upgrades to Solr 9.x:
+This project uses Solr 9.9.0. Key considerations for 9.x:
 
 - Java 11+ requirement
-- Cache implementation migration (LRUCache → CaffeineCache)
-- Lucene version update (8.5.2 → 9.x)
-- Configuration schema updates
+- Cache implementation updated to CaffeineCache
+- Lucene match version aligns with Solr 9.x
+- Some legacy settings from 8.x have been removed or changed
 
 ## License
 
