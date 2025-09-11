@@ -35,7 +35,7 @@
        that you fully re-index after changing this setting as it can
        affect both how text is indexed and queried.
   -->
-  <luceneMatchVersion>8.5.2</luceneMatchVersion>
+  <luceneMatchVersion>9.9.0</luceneMatchVersion>
 
   <!-- <lib/> directives can be used to instruct Solr to load any Jars
        identified and use them to resolve any "plugins" specified in
@@ -81,8 +81,7 @@
   <!--
      <lib path="../a-jar-that-does-not-exist.jar" />
   -->
-  <lib dir="${solr.install.dir:../../../..}/contrib/velocity/lib" regex=".*\.jar" />
-  <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-velocity-\d.*\.jar" />
+  <!-- Removed explicit solr-velocity dist jar loading; not needed in Solr 9 Docker image -->
   <!-- <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-dataimporthandler-\d+\.\d+\.\d+\.jar" /> -->
   <!-- <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-dataimporthandler-extras-\d+\.\d+\.\d+\.jar" /> -->
 
@@ -269,7 +268,6 @@
     -->
     <updateLog>
       <str name="dir">${solr.ulog.dir:}</str>
-      <int name="numVersionBuckets">${solr.ulog.numVersionBuckets:65536}</int>
     </updateLog>
 
     <!-- AutoCommit
@@ -378,65 +376,28 @@
          when the hit ratio of the cache is high (> 75%), and may be
          faster under other scenarios on multi-cpu systems.
     -->
-
-    <!-- Filter Cache
-
-         Cache used by SolrIndexSearcher for filters (DocSets),
-         unordered sets of *all* documents that match a query.  When a
-         new searcher is opened, its caches may be prepopulated or
-         "autowarmed" using data from caches in the old searcher.
-         autowarmCount is the number of items to prepopulate.  For
-         LRUCache, the autowarmed items will be the most recently
-         accessed items.
-
-         Parameters:
-           class - the SolrCache implementation LRUCache or
-               (LRUCache or FastLRUCache)
-           size - the maximum number of entries in the cache
-           initialSize - the initial capacity (number of entries) of
-               the cache.  (see java.util.HashMap)
-           autowarmCount - the number of entries to prepopulate from
-               and old cache.
-           maxRamMB - the maximum amount of RAM (in MB) that this cache is allowed
-                      to occupy. Note that when this option is specified, the size
-                      and initialSize parameters are ignored.
-      -->
-    <filterCache class="solr.FastLRUCache"
+    <filterCache class="solr.CaffeineCache"
                  size="512"
                  initialSize="512"
                  autowarmCount="0"/>
 
-    <!-- Query Result Cache
-
-         Caches results of searches - ordered lists of document ids
-         (DocList) based on a query, a sort, and the range of documents requested.
-         Additional supported parameter by LRUCache:
-            maxRamMB - the maximum amount of RAM (in MB) that this cache is allowed
-                       to occupy
-      -->
-    <queryResultCache class="solr.LRUCache"
+    <queryResultCache class="solr.CaffeineCache"
                       size="512"
                       initialSize="512"
                       autowarmCount="0"/>
 
-    <!-- Document Cache
-
-         Caches Lucene Document objects (the stored fields for each
-         document).  Since Lucene internal document ids are transient,
-         this cache will not be autowarmed.
-      -->
-    <documentCache class="solr.LRUCache"
+    <documentCache class="solr.CaffeineCache"
                    size="512"
                    initialSize="512"
                    autowarmCount="0"/>
 
-    <!-- custom cache currently used by block join -->
     <cache name="perSegFilter"
-           class="solr.search.LRUCache"
+           class="solr.CaffeineCache"
            size="10"
            initialSize="0"
            autowarmCount="10"
            regenerator="solr.NoOpRegenerator" />
+    
 
     <!-- Field Value Cache
 
@@ -445,10 +406,10 @@
          even if not configured here.
       -->
     <!--
-       <fieldValueCache class="solr.FastLRUCache"
-                        size="512"
-                        autowarmCount="128"
-                        showItems="32" />
+       <fieldValueCache class="solr.CaffeineCache"
+                 size="512"
+                 autowarmCount="128"
+                 showItems="32" />
       -->
 
     <!-- Custom Cache
