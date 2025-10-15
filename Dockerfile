@@ -1,7 +1,6 @@
 FROM solr:9.9.0
 LABEL maintainer="Kristian Gray <kag56@cam.ac.uk>"
 
-# Add Jakarta Activation API so Jersey can register DataSource MessageBodyWriter
 USER root
 RUN set -eux; \
     mkdir -p /opt/solr/server/lib/ext; \
