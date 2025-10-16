@@ -1,0 +1,16 @@
+{
+  "name": "calculate-version",
+  "version": "1.0.0",
+  "description": "Calculate next semantic version for releases",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": ["semver", "versioning", "github-actions"],
+  "author": "",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}

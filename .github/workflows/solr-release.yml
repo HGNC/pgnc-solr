@@ -1,0 +1,200 @@
+name: Solr Release
+
+on:
+  push:
+    branches:
+      - release
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type (patch, minor, major)'
+        required: false
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      explicit_version:
+        description: 'Explicit version (e.g., v1.2.3) - overrides release_type'
+        required: false
+        type: string
+      major_confirmation:
+        description: 'Type "CONFIRM" to proceed with major release'
+        required: false
+        type: string
+      notes_override:
+        description: 'Custom release notes (optional)'
+        required: false
+        type: string
+
+concurrency:
+  group: solr-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  validate_inputs:
+    name: Validate Inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate major release confirmation
+        if: inputs.release_type == 'major' && inputs.major_confirmation != 'CONFIRM'
+        run: |
+          echo "::error::Major releases require confirmation. Set major_confirmation input to 'CONFIRM'."
+          exit 1
+
+      - name: Validate explicit version format
+        if: inputs.explicit_version != ''
+        run: |
+          if ! echo "${{ inputs.explicit_version }}" | grep -qE '^v?[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::explicit_version must be in format 'v1.2.3' or '1.2.3'"
+            exit 1
+          fi
+
+  calculate_version:
+    name: Calculate Version
+    needs: validate_inputs
+    runs-on: ubuntu-latest
+    outputs:
+      next_version: ${{ steps.version.outputs.next_version }}
+      is_bootstrap: ${{ steps.version.outputs.is_bootstrap }}
+      previous_version: ${{ steps.version.outputs.previous_version }}
+      release_strategy: ${{ steps.version.outputs.release_strategy }}
+      resolved_release_type: ${{ steps.version.outputs.resolved_release_type }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate next version
+        id: version
+        uses: ./.github/actions/calculate-version
+        with:
+          release_type: ${{ inputs.release_type || 'patch' }}
+          explicit_version: ${{ inputs.explicit_version }}
+          github_token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Display version info
+        run: |
+          echo "Next version: ${{ steps.version.outputs.next_version }}"
+          echo "Is bootstrap: ${{ steps.version.outputs.is_bootstrap }}"
+          echo "Previous version: ${{ steps.version.outputs.previous_version }}"
+          echo "Release strategy: ${{ steps.version.outputs.release_strategy }}"
+          echo "Resolved release type: ${{ steps.version.outputs.resolved_release_type }}"
+
+  create_release:
+    name: Create GitHub Release
+    needs: calculate_version
+    runs-on: ubuntu-latest
+    outputs:
+      release_url: ${{ steps.create_release.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          VERSION="${{ needs.calculate_version.outputs.next_version }}"
+          PREV_VERSION="${{ needs.calculate_version.outputs.previous_version }}"
+          IS_BOOTSTRAP="${{ needs.calculate_version.outputs.is_bootstrap }}"
+          
+          if [[ "${{ inputs.notes_override }}" != "" ]]; then
+            NOTES="${{ inputs.notes_override }}"
+          elif [[ "$IS_BOOTSTRAP" == "true" ]]; then
+            NOTES="Initial automated release for Solr service."
+          else
+            NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
+              -f tag_name="$VERSION" \
+              -f target_commitish="${{ github.sha }}" \
+              -f previous_tag_name="$PREV_VERSION" \
+              --jq '.body' || echo "Automated release from $PREV_VERSION to $VERSION")
+          fi
+          
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        id: create_release
+        run: |
+          VERSION="${{ needs.calculate_version.outputs.next_version }}"
+          NOTES="${{ steps.notes.outputs.notes }}"
+          
+          gh release create "$VERSION" \
+            --title "Solr $VERSION" \
+            --notes "$NOTES" \
+            --target "${{ github.sha }}"
+          
+          RELEASE_URL=$(gh release view "$VERSION" --json url --jq '.url')
+          echo "url=$RELEASE_URL" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+
+  build_and_push:
+    name: Build and Push Docker Image
+    needs: [calculate_version, create_release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/hgnc/pgnc-solr
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.calculate_version.outputs.next_version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.calculate_version.outputs.next_version }}
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./solr
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_VERSION=${{ needs.calculate_version.outputs.next_version }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+
+  finalize:
+    name: Finalize Release
+    needs: [calculate_version, create_release, build_and_push]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ needs.calculate_version.outputs.next_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Strategy**: ${{ needs.calculate_version.outputs.release_strategy }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release Type**: ${{ needs.calculate_version.outputs.resolved_release_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bootstrap**: ${{ needs.calculate_version.outputs.is_bootstrap }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release URL**: ${{ needs.create_release.outputs.release_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: \`ghcr.io/hgnc/pgnc-solr:${{ needs.calculate_version.outputs.next_version }}\`" >> $GITHUB_STEP_SUMMARY

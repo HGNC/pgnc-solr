@@ -1,0 +1,49 @@
+name: 'Calculate Version'
+description: 'Calculates the next semantic version based on current tags and inputs'
+inputs:
+  release_type:
+    description: 'Release type: patch, minor, or major'
+    required: false
+    default: 'patch'
+  explicit_version:
+    description: 'Explicit version to use (overrides release_type)'
+    required: false
+    default: ''
+  github_token:
+    description: 'GitHub token for API access'
+    required: true
+outputs:
+  next_version:
+    description: 'The calculated next version (e.g., v1.2.3)'
+    value: ${{ steps.run.outputs.next_version }}
+  is_bootstrap:
+    description: 'Whether this is a bootstrap release (no prior tags)'
+    value: ${{ steps.run.outputs.is_bootstrap }}
+  previous_version:
+    description: 'The previous version tag (empty if bootstrap)'
+    value: ${{ steps.run.outputs.previous_version }}
+  release_strategy:
+    description: 'Strategy used: bootstrap, auto, explicit, or override'
+    value: ${{ steps.run.outputs.release_strategy }}
+  resolved_release_type:
+    description: 'The release type that was applied'
+    value: ${{ steps.run.outputs.resolved_release_type }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Run version calculator
+      id: run
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        INPUT_RELEASE_TYPE: ${{ inputs.release_type }}
+        INPUT_EXPLICIT_VERSION: ${{ inputs.explicit_version }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_API_URL: ${{ github.api_url }}
+      run: node ${{ github.action_path }}/index.js
