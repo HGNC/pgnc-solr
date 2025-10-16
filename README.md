@@ -1,264 +1,116 @@
-# PGNC Solr Search Engine
+# PGNC Solr Service
 
-[![Apache Solr](https://img.shields.io/badge/Apache%20Solr-9.9.0-orange.svg)](https://solr.apache.org/)
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+Apache Solr powers search for the PGNC (Plant Gene Nomenclature Committee) stack. This directory builds the Solr container, installs additional libraries, and packages the `pgnc` core configuration served inside `docker-compose.yml`.
 
-## Overview
+## Layout
 
-This repository contains the Apache Solr search configuration for the PGNC (Plant Gene Nomenclature Committee) project. Solr provides fast, scalable search functionality for plant gene nomenclature data, enabling efficient querying of gene symbols, names, locations, and cross-references.
+- `Dockerfile` – extends `solr:9.9.0` and adds the Jakarta Activation dependency required by the Data Import Handler
+- `cores/` – mounted into `/var/solr/data` so the container boots with the `pgnc` core pre-configured
+  - `data/pgnc/conf/` – schema, config, synonyms, stopwords, and DIH files
+  - `data/security.json` – basic auth definition for admin/client roles
+  - `log4j2.xml` and `logs/` – logging configuration and (optional) persisted logs
+- `web.xml` – overrides shipped with Solr image when necessary
+- `.dockerignore` – keeps build context lean
 
-## Current Configuration
+The directory is tracked as part of the main repository (not a submodule); ensure edits follow the AGPL licensing requirements.
 
-- **Solr Version**: 9.9.0 (Docker: `solr:9.9.0`)
-- **Lucene Match Version**: Aligned with Solr 9.x
-- **Core Name**: `pgnc`
-- **Security**: BasicAuth enabled with admin/client user roles
-- **Cache Implementation**: CaffeineCache (Solr 9.x)
+## Runtime Integration
 
-## Architecture
+- `solr` service in `docker-compose.yml` mounts `./solr/cores/data:/var/solr/data` and exposes port `LOCALHOST_SOLR_PORT` (default 8983)
+- Health check hits the core status endpoint using the admin credentials defined in `.env`
+- `python` service populates the index via the Data Import Handler using the configuration in `data-config.xml`
+- `solr-client` service proxies search traffic to the NestJS API and Angular frontend
 
-```text
-solr/
-├── cores/                    # Solr cores configuration
-│   ├── data/                # Core data and configuration
-│   │   ├── pgnc/           # PGNC core configuration
-│   │   │   ├── conf/       # Core configuration files
-│   │   │   │   ├── managed-schema     # Schema definition
-│   │   │   │   ├── solrconfig.xml     # Core configuration
-│   │   │   │   ├── synonyms.txt       # Synonym mappings
-│   │   │   │   └── data-config.xml    # Data import configuration
-│   │   │   ├── data/       # Index data and logs
-│   │   │   └── solr-import/ # Data import files
-│   │   ├── security.json   # Authentication configuration
-│   │   └── solr.xml       # Solr instance configuration
-│   └── logs/               # Solr application logs
-├── Dockerfile              # Container configuration (FROM solr:9.9.0)
-└── web.xml                 # Web application configuration
-```
-
-## Key Features
-
-### Search Capabilities
-
-- **Full-text search** across gene symbols, names, and descriptions
-- **Faceted search** by gene status, locus type, and chromosomal location
-- **Autocomplete/suggest** functionality for gene symbols and names
-- **Synonym support** for alternative gene nomenclature
-- **Cross-reference search** across multiple databases (Ensembl, NCBI, UniProt)
-
-### Performance Optimizations
-
-- **Caffeine cache** optimized for Solr 9.x
-- **Optimized field types** for different data types (text, string, location)
-- **Efficient indexing** with proper field analysis and tokenization
-- **Request handler optimization** for common query patterns
-
-### Security Features
-
-- **BasicAuth authentication** with role-based access control
-- **Admin user** for full administrative access
-- **Client user** for read-only search operations
-- **Secure credential management** via environment variables
-
-## Setup and Installation
-
-### Prerequisites
-
-- Docker or Podman with Compose support
-- Environment file (`.env`) with Solr credentials
-- Java 11+ (handled automatically in Docker container)
-
-### Quick Start
-
-1. **Build and start the container**:
-
-   ```bash
-   docker compose up -d solr
-   ```
-
-2. **Verify installation**:
-
-   ```bash
-   curl -u $SOLR_ADMIN_USER:$SOLR_ADMIN_PASSWORD \
-     http://localhost:8983/solr/admin/cores?action=STATUS
-   ```
-
-3. **Access Solr Admin UI**:
-   - URL: <http://localhost:8983/solr>
-   - Login with admin credentials from `.env` file
-
-### Data Loading
-
-The PGNC core is automatically populated by the Python data loading service:
+## Starting the Service
 
 ```bash
-# Load initial data
+# Build after configuration changes
+docker compose build solr
+
+# Launch Solr (dependencies handled automatically)
+docker compose up -d solr
+
+# Verify the core is online
+curl -u "$SOLR_ADMIN_USER:$SOLR_ADMIN_PASSWORD" \
+  "http://localhost:${LOCALHOST_SOLR_PORT:-8983}/solr/admin/cores?action=STATUS"
+```
+
+Visit `http://localhost:${LOCALHOST_SOLR_PORT:-8983}/solr` and log in with the admin credentials from `.env` to inspect the Admin UI.
+
+## Configuration Highlights
+
+- **Schema (`managed-schema`)** – defines fields for gene identifiers, names, locus metadata, cross references, and faceting. Analyzer chains are tuned for gene nomenclature via `protwords.txt`, `stopwords.txt`, and language-specific resources in `conf/lang/`.
+- **Core Settings (`solrconfig.xml`)** – enables request handlers for search (`/select`), suggestions (`/suggest`), and data import (`/dataimport`). Cache implementations use Caffeine (default for Solr 9.x).
+- **Data Import (`data-config.xml`)** – maps PostgreSQL queries to Solr documents. Credentials and JDBC connection information come from environment variables passed by Compose.
+- **Security (`security.json`)** – defines basic-auth users (admin + client). Avoid checking in production credentials; use environment overrides when possible.
+- **Overlay (`configoverlay.json`)** – provides runtime configuration adjustments that complement `solrconfig.xml`.
+
+When modifying configuration files, keep the core directory structure intact so `solr` can start without manual intervention.
+
+## Updating Schema or Config
+
+1. Edit the relevant file under `cores/data/pgnc/conf/`.
+2. Rebuild the container if new libraries or config files are introduced: `docker compose build solr`.
+3. Restart the service: `docker compose restart solr`.
+4. Reload the core to apply schema tweaks without restarting (when possible):
+
+   ```bash
+   curl -u "$SOLR_ADMIN_USER:$SOLR_ADMIN_PASSWORD" \
+     "http://localhost:${LOCALHOST_SOLR_PORT:-8983}/solr/admin/cores?action=RELOAD&core=pgnc"
+   ```
+
+5. Trigger a full reindex using the Python data pipeline (see `python/bin/data-update`).
+
+## Indexing Workflow
+
+```bash
+# Ensure database and Solr are running and healthy
+docker compose up -d pgncdb solr
+
+# Load canonical data
 docker compose up python
 
-# Update search index
+# Perform incremental refreshes as needed
 cd python/bin/data-update
-python main.py --clear  # Clear existing index
-python main.py          # Load fresh data
+python main.py --clear   # optional: wipe index
+python main.py           # rebuild index
 ```
 
-## Configuration Files
+The DIH configuration expects environment variables (`DB_HOST`, `DB_USER`, etc.) provided by Compose; confirm they match your database before running the data loader.
 
-### managed-schema
+## Operations
 
-Defines the document structure and field types for gene data:
+- **Health** – the Compose health check calls the core status endpoint. Manually test with `curl` as shown above.
+- **Logs** – `docker compose logs -f solr` tails container logs; additional rolling logs live under `cores/logs/` if mounted.
+- **Backups** – Use Solr’s replication API against a writable volume. Example:
 
-- **Gene fields**: symbol, name, status, location
-- **Cross-reference fields**: ensembl_id, ncbi_id, uniprot_id
-- **Text analysis**: Custom analyzers for gene nomenclature
-- **Field types**: Optimized for search and faceting
+  ```bash
+  curl -u "$SOLR_ADMIN_USER:$SOLR_ADMIN_PASSWORD" \
+    "http://localhost:${LOCALHOST_SOLR_PORT:-8983}/solr/pgnc/replication?command=backup&name=backup_$(date +%Y%m%d)"
+  ```
 
-### solrconfig.xml
+- **Optimisation** – Run periodically if the index churns heavily:
 
-Core configuration including:
+  ```bash
+  curl -u "$SOLR_ADMIN_USER:$SOLR_ADMIN_PASSWORD" \
+    "http://localhost:${LOCALHOST_SOLR_PORT:-8983}/solr/pgnc/update?optimize=true"
+  ```
 
-- **Cache settings**: CaffeineCache for Solr 9.x
-- **Lucene version**: Match version aligned with Solr 9.x
-- **Request handlers**: Search, suggest, and data import handlers
-- **Update processors**: Data transformation and validation
-- **Security settings**: Authentication and authorization
-
-### data-config.xml
-
-Data import configuration for loading from PostgreSQL:
-
-- **Database connection**: Direct connection to PGNC database
-- **Entity mapping**: SQL queries to Solr documents
-- **Field transformations**: Data formatting and enrichment
-
-## Usage Examples
-
-### Basic Search
-
-```bash
-# Search for genes containing "ABC"
-curl "http://localhost:8983/solr/pgnc/select?q=ABC"
-
-# Search specific field
-curl "http://localhost:8983/solr/pgnc/select?q=symbol:ABC*"
-```
-
-### Faceted Search
-
-```bash
-# Get facets by gene status
-curl "http://localhost:8983/solr/pgnc/select?q=*:*&facet=true&facet.field=status"
-```
-
-### Autocomplete
-
-```bash
-# Get suggestions for gene symbols
-curl "http://localhost:8983/solr/pgnc/suggest?suggest.q=AB"
-```
-
-## Maintenance
-
-### Index Optimization
-
-```bash
-# Optimize the index for better performance
-curl -u $SOLR_ADMIN_USER:$SOLR_ADMIN_PASSWORD \
-  "http://localhost:8983/solr/pgnc/update?optimize=true"
-```
-
-### Backup and Restore
-
-```bash
-# Create backup
-curl -u $SOLR_ADMIN_USER:$SOLR_ADMIN_PASSWORD \
-  "http://localhost:8983/solr/pgnc/replication?command=backup&name=backup_$(date +%Y%m%d)"
-
-# Restore from backup
-curl -u $SOLR_ADMIN_USER:$SOLR_ADMIN_PASSWORD \
-  "http://localhost:8983/solr/pgnc/replication?command=restore&name=backup_20250101"
-```
-
-### Monitoring
-
-- **Admin UI**: Monitor core statistics and performance
-- **Logs**: Check `cores/logs/` for application logs
-- **Health checks**: Automated health monitoring in Docker Compose
+- **Configuration Dump** – `docker compose exec solr solr zk ls /config/pgnc` (when running single-node ZK under the hood) or inspect `solrconfig.xml` directly in the repository.
 
 ## Troubleshooting
 
-### Common Issues
+- **Authentication failures** – ensure `SOLR_ADMIN_USER` and `SOLR_ADMIN_PASSWORD` (and client equivalents) are set in `.env` and exported to the running service.
+- **Core missing on startup** – check that `cores/data/pgnc/core.properties` is present and that the host volume is writable; remove stale `data/` directories if restoring from scratch.
+- **Slow queries** – use the Admin UI > Query screen to profile; review field analyzers and cache hit ratios. Consider running the Python loader with `--clear` to remove deleted docs.
+- **DIH errors** – tail logs while running `python main.py` and confirm JDBC driver dependencies are available (Jakarta Activation JAR is added by the Dockerfile for this purpose).
 
-**Authentication Errors**: Verify credentials in `.env` file
+## Integration Pointers
 
-```bash
-echo "SOLR_ADMIN_USER: $SOLR_ADMIN_USER"
-echo "SOLR_ADMIN_PASSWORD: $SOLR_ADMIN_PASSWORD"
-```
-
-**Index Issues**: Reload core configuration
-
-```bash
-curl -u $SOLR_ADMIN_USER:$SOLR_ADMIN_PASSWORD \
-  "http://localhost:8983/solr/admin/cores?action=RELOAD&core=pgnc"
-```
-
-**Performance Issues**: Check cache statistics in Admin UI
-
-- Navigate to Core Admin > pgnc > Statistics
-- Monitor cache hit ratios and memory usage
-
-### Log Analysis
-
-```bash
-# View recent logs
-docker compose logs -f solr
-
-# Check for specific errors
-docker compose logs solr | grep ERROR
-```
-
-## Development
-
-### Schema Changes
-
-1. Edit `cores/data/pgnc/conf/managed-schema`
-2. Reload the core: `curl -u $SOLR_ADMIN_USER:$SOLR_ADMIN_PASSWORD "http://localhost:8983/solr/admin/cores?action=RELOAD&core=pgnc"`
-3. Reindex data if needed
-
-### Configuration Updates
-
-1. Modify `cores/data/pgnc/conf/solrconfig.xml`
-2. Restart Solr service: `docker compose restart solr`
-3. Verify changes in Admin UI
-
-## Integration
-
-The Solr service integrates with other PGNC components:
-
-- **API**: NestJS 10.x API queries Solr via the solr-client service
-- **Frontend**: Angular 19.1+ application uses API endpoints for search
-- **Database**: Python 3.13+ scripts synchronize PostgreSQL 17.0 data with Solr index
-- **Security**: Authentication integrated with overall application security
-
-## Performance
-
-Current performance characteristics:
-
-- **Index size**: Optimized for ~50K+ gene records
-- **Query response**: < 100ms for typical searches
-- **Suggest response**: < 50ms for autocomplete
-- **Memory usage**: ~2GB RAM for full dataset
-- **Concurrent users**: Tested for 100+ simultaneous searches
-
-## Solr 9.x Notes
-
-This project uses Solr 9.9.0. Key considerations for 9.x:
-
-- Java 11+ requirement
-- Cache implementation updated to CaffeineCache
-- Lucene match version aligns with Solr 9.x
-- Some legacy settings from 8.x have been removed or changed
+- The `solr-client` service exposes a read-only interface for NestJS and Angular; keep credentials aligned between `solr` and `solr-client`.
+- Nginx proxies `/ses/*` requests to the `solr-client` container (see `nginx/nginx.conf`).
+- Environment defaults are documented in the root `sample.env`; adjust ports, usernames, and passwords centrally there.
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). See the [LICENSE](../LICENSE) file for details.
+This directory inherits the repository’s AGPL-3.0 license. Review `LICENSE` at the repository root for full terms.
